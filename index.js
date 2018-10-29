@@ -33,23 +33,40 @@ const server = http.createServer(function(req, res) {
 		buffer += decoder.write(data)
 	})
 
-	// When streaming ends, req object emits end event, (ALWAYS CALLED), after this we send our response back
+	// When streaming ends, req object emits end event, after this we send our response back
+	// (ALWAYS CALLED) irregardles of payload or not
 	req.on('end', function() {
 		buffer += decoder.end()
+
+		// Choose handler request goes to or else 404
+		var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
 
 		// Send the response
 		res.end("Hello World \n");
 	
 		console.log('Request received with payload', buffer)
 	})
-	
-	// Log the request path
-	// console.log('Path is '+ trimmedPath + ' method '+ method)
-	// console.log('Query String params ', queryStringObject)
-	// console.log('Headers received ', headers)
 });
 
 // Start server
 server.listen(3000, function() {
 	console.log("Server listening on port 3000 now")
 })
+
+// handlers
+var handlers = {}
+
+handlers.sample = function(data, callback) {
+	// callback http status and payload object
+	callback(406, {'name': 'sample handler'})
+}
+
+//// Not found handler
+handlers.notFound = function(data, callback) {
+	callback(404);
+}  
+
+// request router 
+var router = {
+	'sample': handlers.sample
+}
